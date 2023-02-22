@@ -30,3 +30,5 @@ git-src
 .cproject
 .ccache
 .vscode*
+/base-extras/
+/target/linux/rockchip/armv8/base-files/etc/rom-version

@@ -7,8 +7,17 @@ define Device/ariaboard_photonicat
   DEVICE_MODEL := Photonicat
   SOC := rk3568
   UBOOT_DEVICE_NAME := photonicat-rk3568
-  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | pine64-img | gzip | append-metadata
   DEVICE_PACKAGES := ar3k-firmware pcat-manager
+  KERNEL += | boot-overlay
+  IMAGE/bootfs.img := bootfs.img
+  IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
+  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
+  ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
+    IMAGES += rootfs.img.gz
+  else
+    IMAGES += rootfs.img
+  endif
+  IMAGES += bootfs.img
 endef
 TARGET_DEVICES += ariaboard_photonicat
 
@@ -222,3 +231,34 @@ define Device/xunlong_orangepi-r1-plus-lts
   DEVICE_PACKAGES := kmod-usb-net-rtl8152
 endef
 TARGET_DEVICES += xunlong_orangepi-r1-plus-lts
+
+define Build/boot-overlay
+	rm -rf $@.boot
+	mkdir -p $@.boot
+	mkdir -p $@.boot/extlinux
+
+	$(CP) $@ $@.boot/Image
+	$(CP) extlinux.conf $@.boot/extlinux/extlinux.conf
+
+	$(foreach dts,$(DEVICE_DTS), \
+		$(CP) \
+			$(DTS_DIR)/$(dts).dtb \
+			$@.boot/$(notdir $(dts)).dtb; \
+	)
+
+	$(TAR) -C $@.boot -cf $(BIN_DIR)/bootfs.tar .
+endef
+
+define Build/bootfs.img
+	rm -rf $@.boot
+	mkdir -p $@.boot
+
+	$(TAR) -C $@.boot -xf $(BIN_DIR)/bootfs.tar
+
+	dd if=/dev/zero of="$(BIN_DIR)/bootfs.img" bs=1M count=128
+	/sbin/mkfs.vfat -F 32 "$(BIN_DIR)/bootfs.img"
+	mcopy -i "$(BIN_DIR)/bootfs.img" -son $@.boot/* ::
+
+	cp "$(BIN_DIR)/bootfs.img" "$(BIN_DIR)/sd-bootfs.img"
+	mcopy -i "$(BIN_DIR)/sd-bootfs.img" -on extlinux-sd.conf ::/extlinux/extlinux.conf
+endef

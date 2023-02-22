@@ -65,11 +65,23 @@ define Build/pine64-bin
 	dd if="$(STAGING_DIR_IMAGE)"/$(SOC)-trust.bin of="$@" seek=24576 conv=notrunc
 endef
 
+define Image/Build/gzip
+	gzip -f9n $(BIN_DIR)/rootfs-$(1).img
+endef
+
+$(eval $(call Image/gzip-ext4-padded-squashfs))
+
+define Image/Build
+	$(call Image/Build/$(1))
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/rootfs-$(1).img
+	$(call Image/Build/gzip/$(1))
+endef
+
 ### Devices ###
 define Device/Default
   PROFILES := Default
   KERNEL := kernel-bin
-  IMAGES := sysupgrade.img.gz
+  IMAGES := sysupgrade.img.gz Image dtb
   DEVICE_DTS = rockchip/$$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
 
