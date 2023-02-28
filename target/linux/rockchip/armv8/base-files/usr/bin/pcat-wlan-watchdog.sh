@@ -8,48 +8,54 @@ if [ ! -d "${WLAN_SDIO_PATH}" ]; then
 fi
 
 while true; do
-    WLAN_RADIO0_PATH="$(wifi status | jq -r .radio0.config.path | grep ${SDIO_DEV})"
+    COUNT=0
 
-    if [ x"${WLAN_RADIO0_PATH}" = x"" ]; then
+    ATH10K_SDIO_MODULE="$(grep ath10k_sdio /proc/modules)"
+    if [ x"${ATH10K_SDIO_MODULE}" = x"" ]; then
+        modprobe ath10k_sdio
         sleep 15
-        continue
     fi
 
-    WLAN_RADIO0_AUTOSTART="$(wifi status | jq -r .radio0.autostart)"
-    if [ x"${WLAN_RADIO0_AUTOSTART}" != x"true" ]; then
-        sleep 15
-        continue
-    fi
+    while [ ${COUNT} -lt 2 ]; do
+        WLAN_RADIO_PATH="$(wifi status | jq -r .radio${COUNT}.config.path)"
 
-    WLAN_RADIO0_DISABLED="$(wifi status | jq -r .radio0.disabled)"
+        if [ x"${WLAN_RADIO_PATH}" = x"" ]; then
+            break
+        fi
 
-    if [ x"${WLAN_RADIO0_DISABLED}" != x"false" ]; then
-        sleep 15
-        continue
-    fi
+        WLAN_RADIO_AUTOSTART="$(wifi status | jq -r .radio${COUNT}.autostart)"
+        if [ x"${WLAN_RADIO_AUTOSTART}" != x"true" ]; then
+            break
+        fi
 
-    WLAN_RADIO0_RETRY_FAILED="$(wifi status | jq -r .radio0.retry_setup_failed)"
+        WLAN_RADIO_DISABLED="$(wifi status | jq -r .radio${COUNT}.disabled)"
 
-    if [ x"${WLAN_RADIO0_RETRY_FAILED}" != x"true" ]; then
-        sleep 15
-        continue
-    fi
+        if [ x"${WLAN_RADIO_DISABLED}" = x"true" ]; then
+            break
+        fi
 
-    WLAN_RADIO0_PENDING="$(wifi status | jq -r .radio0.pending)"
+        WLAN_RADIO_RETRY_FAILED="$(wifi status | jq -r .radio${COUNT}.retry_setup_failed)"
 
-    if [ x"${WLAN_RADIO0_PENDING}" = x"true" ]; then
-        sleep 15
-        continue
-    fi
+        if [ x"${WLAN_RADIO_RETRY_FAILED}" != x"true" ]; then
+            break
+        fi
 
-    WLAN_RADIO0_STATE="$(wifi status | jq -r .radio0.up)"
+        WLAN_RADIO_PENDING="$(wifi status | jq -r .radio${COUNT}.pending)"
 
-    if [ x"${WLAN_RADIO0_STATE}" = x"true" ]; then
-        sleep 15
-        continue
-    fi
+        if [ x"${WLAN_RADIO_PENDING}" = x"true" ]; then
+            break
+        fi
 
-    wifi up radio0
+        WLAN_RADIO_STATE="$(wifi status | jq -r .radio${COUNT}.up)"
 
-    sleep 10
+        if [ x"${WLAN_RADIO_STATE}" = x"true" ]; then
+            break
+        fi
+
+        wifi up radio${COUNT}
+
+        COUNT=$(expr ${COUNT} + 1)
+    done
+
+    sleep 15
 done
