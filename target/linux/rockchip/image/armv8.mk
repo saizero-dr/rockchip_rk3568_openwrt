@@ -7,17 +7,8 @@ define Device/ariaboard_photonicat
   DEVICE_MODEL := Photonicat
   SOC := rk3568
   UBOOT_DEVICE_NAME := photonicat-rk3568
-  DEVICE_PACKAGES := ar3k-firmware pcat-manager
-  KERNEL += | boot-overlay
-  IMAGE/bootfs.img := bootfs.img
-  IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
-  IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
-  ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
-    IMAGES += rootfs.img.gz
-  else
-    IMAGES += rootfs.img
-  endif
-  IMAGES += bootfs.img
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := ath10k-firmware-qca9377-sdio kmod-ath10k kmod-ath10k-sdio pcat-manager
 endef
 TARGET_DEVICES += ariaboard_photonicat
 
@@ -31,9 +22,18 @@ define Device/ezpro_mrkaio-m68s
 endef
 TARGET_DEVICES += ezpro_mrkaio-m68s
 
+define Device/ezpro_mrkaio-m68s-plus
+  DEVICE_VENDOR := EZPRO
+  DEVICE_MODEL := Mrkaio M68S PLUS
+  SOC := rk3568
+  UBOOT_DEVICE_NAME := mrkaio-m68s-rk3568
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-r8125 kmod-ata-ahci kmod-ata-ahci-platform kmod-nvme kmod-scsi-core
+endef
+TARGET_DEVICES += ezpro_mrkaio-m68s-plus
+
 define Device/hinlink_common
   DEVICE_VENDOR := HINLINK
-  SOC := rk3568
   UBOOT_DEVICE_NAME := opc-h68k-rk3568
   IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | pine64-img | gzip | append-metadata
   DEVICE_PACKAGES := kmod-ata-ahci-platform kmod-mt7921e kmod-r8125 kmod-usb-serial-cp210x wpad-openssl
@@ -42,14 +42,24 @@ endef
 define Device/hinlink_opc-h66k
 $(call Device/hinlink_common)
   DEVICE_MODEL := OPC-H66K
+  SOC := rk3568
 endef
 TARGET_DEVICES += hinlink_opc-h66k
 
 define Device/hinlink_opc-h68k
 $(call Device/hinlink_common)
   DEVICE_MODEL := OPC-H68K
+  SOC := rk3568
 endef
 TARGET_DEVICES += hinlink_opc-h68k
+
+define Device/hinlink_opc-h69k
+$(call Device/hinlink_common)
+  DEVICE_MODEL := OPC-H69K
+  SOC := rk3568
+  DEVICE_PACKAGES += kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += hinlink_opc-h69k
 
 define Device/fastrhino_common
   DEVICE_VENDOR := FastRhino
@@ -120,6 +130,16 @@ define Device/friendlyarm_nanopi-r4se
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r4se
 
+define Device/friendlyarm_nanopi-r5c
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R5C
+  SOC := rk3568
+  UBOOT_DEVICE_NAME := nanopi-r5s-rk3568
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-r8125 kmod-nvme kmod-scsi-core
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r5c
+
 define Device/friendlyarm_nanopi-r5s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R5S
@@ -187,7 +207,7 @@ define Device/rongpin_king3399
   SOC := rk3399
   UBOOT_DEVICE_NAME := rongpin-king3399-rk3399
   IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r4s | pine64-bin | gzip | append-metadata
-  DEVICE_PACKAGES := kmod-r8168 -urngd
+  DEVICE_PACKAGES := kmod-r8168 -urngd kmod-brcmfmac cypress-firmware-4356-sdio rongpin-king3399-firmware wpad-openssl
 endef
 TARGET_DEVICES += rongpin_king3399
 
@@ -197,10 +217,20 @@ define Device/rocktech_mpc1903
   SOC := rk3399
   SUPPORTED_DEVICES := rocktech,mpc1903
   UBOOT_DEVICE_NAME := rocktech-mpc1903-rk3399
-  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-bin | gzip | append-metadata
   DEVICE_PACKAGES := kmod-usb-net-smsc75xx kmod-usb-serial-cp210x -urngd
 endef
 TARGET_DEVICES += rocktech_mpc1903
+
+define Device/sharevdi_h3399pc
+  DEVICE_VENDOR := SHAREVDI
+  DEVICE_MODEL := H3399PC
+  SOC := rk3399
+  UBOOT_DEVICE_NAME := sharevdi-h3399pc-rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r4s | pine64-bin | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-r8168 -urngd
+endef
+TARGET_DEVICES += sharevdi_h3399pc
 
 define Device/sharevdi_guangmiao-g4c
   DEVICE_VENDOR := SHAREVDI
@@ -231,34 +261,3 @@ define Device/xunlong_orangepi-r1-plus-lts
   DEVICE_PACKAGES := kmod-usb-net-rtl8152
 endef
 TARGET_DEVICES += xunlong_orangepi-r1-plus-lts
-
-define Build/boot-overlay
-	rm -rf $@.boot
-	mkdir -p $@.boot
-	mkdir -p $@.boot/extlinux
-
-	$(CP) $@ $@.boot/Image
-	$(CP) extlinux.conf $@.boot/extlinux/extlinux.conf
-
-	$(foreach dts,$(DEVICE_DTS), \
-		$(CP) \
-			$(DTS_DIR)/$(dts).dtb \
-			$@.boot/$(notdir $(dts)).dtb; \
-	)
-
-	$(TAR) -C $@.boot -cf $(BIN_DIR)/bootfs.tar .
-endef
-
-define Build/bootfs.img
-	rm -rf $@.boot
-	mkdir -p $@.boot
-
-	$(TAR) -C $@.boot -xf $(BIN_DIR)/bootfs.tar
-
-	dd if=/dev/zero of="$(BIN_DIR)/bootfs.img" bs=1M count=128
-	/sbin/mkfs.vfat -F 32 "$(BIN_DIR)/bootfs.img"
-	mcopy -i "$(BIN_DIR)/bootfs.img" -son $@.boot/* ::
-
-	cp "$(BIN_DIR)/bootfs.img" "$(BIN_DIR)/sd-bootfs.img"
-	mcopy -i "$(BIN_DIR)/sd-bootfs.img" -on extlinux-sd.conf ::/extlinux/extlinux.conf
-endef
