@@ -204,7 +204,7 @@ define U-Boot/photonicat-rk3568
   DEPENDS:=+PACKAGE_u-boot-photonicat-rk3568:arm-trusted-firmware-rk3568
   PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip-vendor
   ATF:=rk3568_bl31_v1.34.elf
-  DDR:=rk3568_ddr_1560MHz_v1.13.bin
+  DDR:=rk3568_ddr_1332MHz_v1.13.bin
 endef
 
 define U-Boot/radxa-e25-rk3568

@@ -24,12 +24,12 @@ hostapd_append_wep_key() {
 		[1234])
 			for idx in 1 2 3 4; do
 				local zidx
-				zidx=$(($idx - 1))
+				zidx="$(($idx - 1))"
 				json_get_var ckey "key${idx}"
 				[ -n "$ckey" ] && \
 					append $var "wep_key${zidx}=$(prepare_key_wep "$ckey")" "$N$T"
 			done
-			wep_keyidx=$((key - 1))
+			wep_keyidx="$((key - 1))"
 		;;
 		*)
 			append $var "wep_key0=$(prepare_key_wep "$key")" "$N$T"
@@ -203,6 +203,8 @@ hostapd_prepare_device_config() {
 				set_default rate_list "24000 36000 48000 54000"
 				set_default basic_rate_list "24000"
 			fi
+
+			[ -n "$intel_lar" ] && append base_cfg "intel_lar=$intel_lar" "$N"
 		;;
 		a)
 			if [ "$cell_density" -eq 1 ]; then
@@ -268,11 +270,11 @@ hostapd_common_add_bss_config() {
 	config_add_int ieee80211w
 	config_add_int eapol_version
 
-	config_add_string 'auth_server:host' 'server:host'
+	config_add_array auth_server acct_server
+	config_add_string 'server:host'
 	config_add_string auth_secret key
 	config_add_int 'auth_port:port' 'port:port'
 
-	config_add_string acct_server
 	config_add_string acct_secret
 	config_add_int acct_port
 	config_add_int acct_interval
@@ -527,6 +529,20 @@ append_airtime_sta_weight() {
 	[ -n "$1" ] && append bss_conf "airtime_sta_weight=$1" "$N"
 }
 
+append_auth_server() {
+	[ -n "$1" ] || return
+	append bss_conf "auth_server_addr=$1" "$N"
+	append bss_conf "auth_server_port=$auth_port" "$N"
+	[ -n "$auth_secret" ] && append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+}
+
+append_acct_server() {
+	[ -n "$1" ] || return
+	append bss_conf "acct_server_addr=$1" "$N"
+	append bss_conf "acct_server_port=$acct_port" "$N"
+	[ -n "$acct_secret" ] && append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
+}
+
 hostapd_set_bss_options() {
 	local var="$1"
 	local phy="$2"
@@ -702,6 +718,8 @@ hostapd_set_bss_options() {
 
 			set_default dynamic_ownip 1
 
+			set_default dynamic_ownip 1
+
 			# legacy compatibility
 			[ -n "$auth_server" ] || json_get_var auth_server server
 			[ -n "$auth_port" ] || json_get_var auth_port port
@@ -735,12 +753,7 @@ hostapd_set_bss_options() {
 			set_default dae_port 3799
 			set_default request_cui 0
 
-			[ "$eap_server" -eq 0 ] && {
-				append bss_conf "auth_server_addr=$auth_server" "$N"
-				append bss_conf "auth_server_port=$auth_port" "$N"
-				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
-			}
-
+			[ "$eap_server" -eq 0 ] && json_for_each_item append_auth_server auth_server
 			[ "$request_cui" -gt 0 ] && append bss_conf "radius_request_cui=$request_cui" "$N"
 			[ -n "$eap_reauth_period" ] && append bss_conf "eap_reauth_period=$eap_reauth_period" "$N"
 
@@ -790,7 +803,24 @@ hostapd_set_bss_options() {
 		;;
 	esac
 
-	local auth_algs=$((($auth_mode_shared << 1) | $auth_mode_open))
+	case "$auth_type" in
+		none|owe|psk|sae|psk-sae|wep)
+			json_get_vars \
+			auth_server auth_port auth_secret \
+			ownip radius_client_addr
+
+			[ -n "$auth_server" ] &&  {
+				set_default auth_port 1812
+
+				json_for_each_item append_auth_server auth_server
+				[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+				[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
+				append bss_conf "macaddr_acl=2" "$N"
+			}
+		;;
+	esac
+
+	local auth_algs="$((($auth_mode_shared << 1) | $auth_mode_open))"
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
 	[ -n "$wpa_pairwise" ] && append bss_conf "wpa_pairwise=$wpa_pairwise" "$N"
@@ -1159,7 +1189,7 @@ hostapd_set_bss_options() {
 		append bss_conf "$val" "$N"
 	done
 
-	bss_md5sum=$(echo $bss_conf | md5sum | cut -d" " -f1)
+	bss_md5sum="$(echo $bss_conf | md5sum | cut -d" " -f1)"
 	append bss_conf "config_id=$bss_md5sum" "$N"
 
 	append "$var" "$bss_conf" "$N"
@@ -1181,7 +1211,7 @@ hostapd_set_log_options() {
 	set_default log_iapp   1
 	set_default log_mlme   1
 
-	local log_mask=$(( \
+	local log_mask="$(( \
 		($log_80211  << 0) | \
 		($log_8021x  << 1) | \
 		($log_radius << 2) | \
@@ -1189,7 +1219,7 @@ hostapd_set_log_options() {
 		($log_driver << 4) | \
 		($log_iapp   << 5) | \
 		($log_mlme   << 6)   \
-	))
+	))"
 
 	append "$var" "logger_syslog=$log_mask" "$N"
 	append "$var" "logger_syslog_level=$log_level" "$N"
@@ -1352,6 +1382,8 @@ wpa_supplicant_add_network() {
 
 	[ -n "$ocv" ] && append network_data "ocv=$ocv" "$N$T"
 
+	[ -n "$ocv" ] && append network_data "ocv=$ocv" "$N$T"
+
 	case "$auth_type" in
 		none) ;;
 		owe)
@@ -1375,11 +1407,11 @@ wpa_supplicant_add_network() {
 
 			key_mgmt="$wpa_key_mgmt"
 
-			if [ ${#key} -eq 64 ]; then
-				passphrase="psk=${key}"
+			if [ "$_w_mode" = "mesh" ] || [ "$auth_type" = "sae" ]; then
+				passphrase="sae_password=\"${key}\""
 			else
-				if [ "$_w_mode" = "mesh" ]; then
-					passphrase="sae_password=\"${key}\""
+				if [ ${#key} -eq 64 ]; then
+					passphrase="psk=${key}"
 				else
 					passphrase="psk=\"${key}\""
 				fi

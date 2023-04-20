@@ -23,7 +23,7 @@ case "$VARIANT" in
 	;;
 "rk3568")
 	ATF="rk35/rk3568_bl31_v1.34.elf"
-	DDR="rk35/rk3568_ddr_1560MHz_v1.13.bin"
+	DDR="rk35/rk3568_ddr_1332MHz_v1.13.bin"
 	;;
 *)
 	echo -e "Not compatible with your platform: $VARIANT."
@@ -50,7 +50,7 @@ elif [ "$ACTION" == "install" ]; then
 		cp -fp "$PKG_BUILD_DIR/$VARIANT-trust.bin" "$STAGING_DIR_IMAGE"/
 		;;
 	rk35*)
-		cp -fp "$PKG_BUILD_DIR/bin/$DDR" "$STAGING_DIR_IMAGE"/
+		cp -fp "$PKG_BUILD_DIR/bin/rk35/rk35"*"_ddr_"*"_v1.13.bin" "$STAGING_DIR_IMAGE"/
 		;;
 	esac
 else
