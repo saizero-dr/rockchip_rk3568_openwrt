@@ -230,6 +230,34 @@
 		reset-wait-time = <0>;
 		reset-active-time = <800>;
 	};
+
+	firmware {
+		optee: optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+/*
+		hole {
+			compatible = "removed-dma-pool";
+			reg = <0x0 0x38000000 0x0 0x08000000>;
+			no-map;
+		};
+*/
+		ramoops: ramoops@110000 {
+			compatible = "ramoops";
+			reg = <0x0 0x110000 0x0 0xf0000>;
+			record-size = <0x20000>;
+			console-size = <0x80000>;
+			ftrace-size = <0x00000>;
+			pmsg-size = <0x50000>;
+		}; 
+	};
 };
 
 &combphy0 {
@@ -296,8 +324,8 @@
 	snps,reset-gpio = <&gpio4 RK_PC0 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
 	snps,reset-delays-us = <0 20000 100000>;
-	tx_delay = <0x30>;
-	rx_delay = <0x10>;
+	tx_delay = <0x38>;
+	rx_delay = <0x15>;
 	status = "okay";
 };
 
@@ -339,8 +367,8 @@
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-init-microvolt = <900000>;
-		regulator-min-microvolt = <712500>;
-		regulator-max-microvolt = <1390000>;
+		regulator-min-microvolt = <810000>;
+		regulator-max-microvolt = <1150000>;
 		regulator-ramp-delay = <2300>;
 		vin-supply = <&vcc_syson>;
 
@@ -482,11 +510,13 @@
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_clk &sdmmc1_cmd>;
 	mmc-pwrseq = <&sdio_pwrseq>;
 	status = "okay";
-	max-frequency = <50000000>;
+	max-frequency = <150000000>;
 	cap-sdio-irq;
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	sd-uhs-sdr25;
+	sd-uhs-sdr50;
+	sd-uhs-sdr104;
 	no-mmc;
 	no-sd;
 	wakeup-source;
@@ -618,4 +648,8 @@
 		output-high;
 		line-name = "aux-pwren";
         };
+};
+
+&cpu0_opp_table {
+
 };

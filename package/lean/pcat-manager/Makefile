@@ -5,7 +5,7 @@ PKG_VERSION:=1.0.16
 PKG_RELEASE:=15
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/photonicat/rockchip_rk3568_pcat_manager.git
+PKG_SOURCE_URL:=ssh://git@git.g77k.com/supercatexpert/pcat-manager.git
 PKG_SOURCE_DATE:=2023-03-17
 PKG_SOURCE_VERSION:=5b8d8e098205e92fe9587f03d8bc34f8383987b2
 
@@ -24,7 +24,7 @@ define Package/pcat-manager
   CATEGORY:=Utilities
   DEPENDS:=+glib2 +libgpiod +libjson-c +libusb-1.0
   TITLE:=PCat System Manager
-  URL:=https://github.com/photonicat/rockchip_rk3568_pcat_manager
+  URL:=https://git.g77k.com
   PROVIDES:=pcat-manager
 endef
 

@@ -35,13 +35,8 @@ fi
 
 echo "emmc-updating" >/tmp/pcat-emmc-update.tmp
 
-if [ -f "/mnt/mmcblk1p3/bootfs.img.gz" ]; then
-    gunzip -c "/mnt/mmcblk1p3/bootfs.img.gz" | dd of=/dev/mmcblk0p5 bs=1M
-fi
-
-if [ -f "/mnt/mmcblk1p3/rootfs.img.gz" ]; then
-    umount -f /dev/mmcblk0p6 2>/dev/null || true
-    gunzip -c "/mnt/mmcblk1p3/rootfs.img.gz" | dd of=/dev/mmcblk0p6 bs=1M
+if [ -f "/mnt/mmcblk1p3/sysupgrade.img.gz" ]; then
+    gunzip -c "/mnt/mmcblk1p3/sysupgrade.img.gz" | dd of=/dev/mmcblk0 bs=1M
 fi
 
 echo "emmc-updated-ok" >/tmp/pcat-emmc-update.tmp

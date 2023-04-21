@@ -16,6 +16,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/badaix/snapcast.git
 PKG_SOURCE_VERSION:=v0.27.0
 PKG_BUILD_DIR:=$(BUILD_DIR)/snapcast-$(PKG_VERSION)
+PKG_MIRROR_HASH:=070704f549c6858d656a417064583ff635946909d002b6848ffcb40d18fffbf0
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -47,7 +48,7 @@ endef
 define Package/snapserver
 	$(call Package/snapcast/Default)
 	TITLE += Snapserver
-	DEPENDS += +libvorbis +AUDIO_SUPPORT:alsa-lib +libvorbisidec +libsoxr
+	DEPENDS += +libvorbis +AUDIO_SUPPORT:alsa-lib +libvorbisidec +libsoxr +libflac +libopus +libexpat +libavahi-client
 	HIDDEN := 1
 endef
 
