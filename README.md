@@ -35,7 +35,7 @@
 
    ```bash
    git clone https://github.com/photonicat/rockchip_rk3568_openwrt.git
-   cd lede
+   cd rockchip_rk3568_openwrt
    ./scripts/feeds update -a
    ./scripts/feeds install -a
    make menuconfig
@@ -56,7 +56,7 @@
 二次编译：
 
 ```bash
-cd lede
+cd rockchip_rk3568_openwrt
 git pull
 ./scripts/feeds update -a
 ./scripts/feeds install -a
