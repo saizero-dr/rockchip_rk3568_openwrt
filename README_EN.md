@@ -25,6 +25,7 @@ Let's start!
 4. ```bash
    ./scripts/feeds update -a
    ./scripts/feeds install -a
+   cp configs/base_defconfig .config
    make menuconfig
    ```
 

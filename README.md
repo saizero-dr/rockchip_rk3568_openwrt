@@ -38,6 +38,7 @@
    cd rockchip_rk3568_openwrt
    ./scripts/feeds update -a
    ./scripts/feeds install -a
+   cp configs/base_defconfig .config
    make menuconfig
    ```
 
