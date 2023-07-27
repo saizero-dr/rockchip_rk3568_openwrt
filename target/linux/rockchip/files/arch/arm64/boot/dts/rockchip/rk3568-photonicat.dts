@@ -242,13 +242,7 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-/*
-		hole {
-			compatible = "removed-dma-pool";
-			reg = <0x0 0x38000000 0x0 0x08000000>;
-			no-map;
-		};
-*/
+
 		ramoops: ramoops@110000 {
 			compatible = "ramoops";
 			reg = <0x0 0x110000 0x0 0xf0000>;
@@ -515,6 +509,7 @@
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	sd-uhs-sdr25;
+	sd-uhs-sdr50;
 	no-mmc;
 	no-sd;
 	wakeup-source;
@@ -582,6 +577,7 @@
 	phy-names = "usb2-phy";
 	maximum-speed = "high-speed";
 	status = "okay";
+
 };
 
 &usb_host1_ehci {
@@ -632,7 +628,11 @@
 };
 
 &xin32k {
-	status = "disabled";
+	clock-frequency = <32768>;
+	clock-output-names = "xin32k";
+	pinctrl-0 = <&clk32k_out1>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &xpcs {

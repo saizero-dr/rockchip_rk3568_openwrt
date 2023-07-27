@@ -46,7 +46,7 @@
 +};
 --- /dev/null
 +++ b/arch/arm/dts/rk3568-photonicat.dts
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,107 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +
 +/dts-v1/;
@@ -72,6 +72,55 @@
 +		regulator-min-microvolt = <3300000>;
 +		regulator-max-microvolt = <3300000>;
 +	};
++
++	vcc_sysin: vcc-sysin {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_sysin";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++	};
++
++	vcc_syson: vcc-syson {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_syson";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc_sysin>;
++	};
++
++        vcc3v3_sys: vcc3v3-sys {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3_sys";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc_syson>;
++	};
++
++	vcc_1v8: vcc-1v8 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_1v8";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		vin-supply = <&vcc3v3_sys>;
++	};
++
++	vcc_3v3: vcc-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_3v3";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc3v3_sys>;
++	};
 +};
 +
 +&pinctrl {
@@ -86,6 +135,10 @@
 +	bus-width = <8>;
 +	max-frequency = <200000000>;
 +	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd>;
++	vmmc-supply = <&vcc_3v3>;
++	vqmmc-supply = <&vcc_1v8>;
 +	status = "okay";
 +};
 +
@@ -95,7 +148,7 @@
 +};
 +
 +&sdmmc1 {
-+	status = "okay";
++	status = "disabled";
 +};
 +
 +&uart2 {

@@ -510,12 +510,13 @@
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_clk &sdmmc1_cmd>;
 	mmc-pwrseq = <&sdio_pwrseq>;
 	status = "okay";
-	max-frequency = <50000000>;
+	max-frequency = <150000000>;
 	cap-sdio-irq;
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	sd-uhs-sdr25;
 	sd-uhs-sdr50;
+	sd-uhs-sdr104;
 	no-mmc;
 	no-sd;
 	wakeup-source;
@@ -630,7 +631,11 @@
 };
 
 &xin32k {
-	status = "disabled";
+	clock-frequency = <32768>;
+	clock-output-names = "xin32k";
+	pinctrl-0 = <&clk32k_out1>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &xpcs {
