@@ -242,13 +242,7 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-/*
-		hole {
-			compatible = "removed-dma-pool";
-			reg = <0x0 0x38000000 0x0 0x08000000>;
-			no-map;
-		};
-*/
+
 		ramoops: ramoops@110000 {
 			compatible = "ramoops";
 			reg = <0x0 0x110000 0x0 0xf0000>;
@@ -510,13 +504,12 @@
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_clk &sdmmc1_cmd>;
 	mmc-pwrseq = <&sdio_pwrseq>;
 	status = "okay";
-	max-frequency = <150000000>;
+	max-frequency = <50000000>;
 	cap-sdio-irq;
 	vmmc-supply = <&vcc3v3_sys>;
 	vqmmc-supply = <&vcc_1v8>;
 	sd-uhs-sdr25;
 	sd-uhs-sdr50;
-	sd-uhs-sdr104;
 	no-mmc;
 	no-sd;
 	wakeup-source;

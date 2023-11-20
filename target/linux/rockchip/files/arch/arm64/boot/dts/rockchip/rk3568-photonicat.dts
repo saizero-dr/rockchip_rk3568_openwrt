@@ -404,6 +404,7 @@
 &pcie3x2 {
 	reset-gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_pcie>;
+	num-lanes = <1>;
 	max-link-speed = <1>;
 	status = "okay";
 };

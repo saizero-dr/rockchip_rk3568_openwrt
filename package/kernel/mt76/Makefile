@@ -8,9 +8,17 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2023-07-14
-PKG_SOURCE_VERSION:=bb3937d5c3e0b13c0d08747ec0fc9726fb4fd870
-PKG_MIRROR_HASH:=498d9cfdafe06572d0668d49e89f1014715100fa59c4f89b8495cd869c8c9b0b
+
+ifdef CONFIG_LINUX_5_4
+PKG_SOURCE_DATE:=2022-12-22
+PKG_SOURCE_VERSION:=5b509e80384ab019ac11aa90c81ec0dbb5b0d7f2
+PKG_MIRROR_HASH:=6fc25df4d28becd010ff4971b23731c08b53e69381a9e4c868091899712f78a9
+PATCH_DIR:=./patches-5.4
+else
+PKG_SOURCE_DATE:=2023-08-14
+PKG_SOURCE_VERSION:=b14c2351ddb8601c322576d84029e463d456caef
+PKG_MIRROR_HASH:=62b5e157ad525424b6857e77ed373e8d39d03af71b057f8b309d8b293d6eac5f
+endif
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_USE_NINJA:=0
@@ -264,22 +272,37 @@ endef
 
 define KernelPackage/mt7922-firmware
   $(KernelPackage/mt76-default)
-  DEPENDS+=+kmod-mt7921-common
   TITLE:=MediaTek MT7922 firmware
+endef
+
+define KernelPackage/mt792x-common
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT792x wireless driver common code
+  HIDDEN:=1
+  DEPENDS+=+kmod-mt76-connac +@DRIVER_11AX_SUPPORT
+  FILES:= $(PKG_BUILD_DIR)/mt792x-lib.ko
+endef
+
+define KernelPackage/mt792x-usb
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT792x wireless driver USB code
+  HIDDEN:=1
+  DEPENDS+=+kmod-mt792x-common +kmod-mt76-usb +@DRIVER_11AX_SUPPORT
+  FILES:= $(PKG_BUILD_DIR)/mt792x-usb.ko
 endef
 
 define KernelPackage/mt7921-common
   $(KernelPackage/mt76-default)
-  TITLE:=MediaTek MT7615 wireless driver common code
+  TITLE:=MediaTek MT7921 wireless driver common code
   HIDDEN:=1
-  DEPENDS+=+kmod-mt76-connac +kmod-mt7921-firmware +@DRIVER_11AX_SUPPORT +kmod-hwmon-core
+  DEPENDS+=+kmod-mt792x-common +kmod-mt7921-firmware +@DRIVER_11AX_SUPPORT +kmod-hwmon-core
   FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921-common.ko
 endef
 
 define KernelPackage/mt7921u
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7921U wireless driver
-  DEPENDS+=+kmod-mt76-usb +kmod-mt7921-common
+  DEPENDS+=+kmod-mt792x-usb +kmod-mt7921-common
   FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921u.ko
   AUTOLOAD:=$(call AutoProbe,mt7921u)
 endef
@@ -298,14 +321,6 @@ define KernelPackage/mt7921e
   DEPENDS+=@PCI_SUPPORT +kmod-mt7921-common
   FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921e.ko
   AUTOLOAD:=$(call AutoProbe,mt7921e)
-endef
-
-define KernelPackage/mt7922-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
-	cp \
-		$(PKG_BUILD_DIR)/firmware/WIFI_MT7922_patch_mcu_1_1_hdr.bin \
-		$(PKG_BUILD_DIR)/firmware/WIFI_RAM_CODE_MT7922_1.bin \
-		$(1)/lib/firmware/mediatek
 endef
 
 define Package/mt76-test
@@ -397,6 +412,12 @@ ifdef CONFIG_PACKAGE_kmod-mt7915e
     PKG_MAKE_FLAGS += CONFIG_MT798X_WMAC=y
     NOSTDINC_FLAGS += -DCONFIG_MT798X_WMAC
   endif
+endif
+ifdef CONFIG_PACKAGE_kmod-mt792x-common
+  PKG_MAKE_FLAGS += CONFIG_MT792x_LIB=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt792x-usb
+  PKG_MAKE_FLAGS += CONFIG_MT792x_USB=m
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7921-common
   PKG_MAKE_FLAGS += CONFIG_MT7921_COMMON=m
@@ -534,8 +555,6 @@ define KernelPackage/mt7986-firmware/install
 		$(PKG_BUILD_DIR)/firmware/mt7986_wm.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7986_rom_patch_mt7975.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7986_rom_patch.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7986_eeprom_mt7975_dual.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7986_eeprom_mt7976_dual.bin \
 		$(1)/lib/firmware/mediatek
 endef
 
@@ -544,6 +563,14 @@ define KernelPackage/mt7921-firmware/install
 	cp \
 		$(PKG_BUILD_DIR)/firmware/WIFI_MT7961_patch_mcu_1_2_hdr.bin \
 		$(PKG_BUILD_DIR)/firmware/WIFI_RAM_CODE_MT7961_1.bin \
+		$(1)/lib/firmware/mediatek
+endef
+
+define KernelPackage/mt7922-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
+	cp \
+		$(PKG_BUILD_DIR)/firmware/WIFI_MT7922_patch_mcu_1_1_hdr.bin \
+		$(PKG_BUILD_DIR)/firmware/WIFI_RAM_CODE_MT7922_1.bin \
 		$(1)/lib/firmware/mediatek
 endef
 
@@ -580,10 +607,12 @@ $(eval $(call KernelPackage,mt7916-firmware))
 $(eval $(call KernelPackage,mt7981-firmware))
 $(eval $(call KernelPackage,mt7986-firmware))
 $(eval $(call KernelPackage,mt7921-firmware))
+$(eval $(call KernelPackage,mt7922-firmware))
+$(eval $(call KernelPackage,mt792x-common))
+$(eval $(call KernelPackage,mt792x-usb))
 $(eval $(call KernelPackage,mt7921-common))
 $(eval $(call KernelPackage,mt7921u))
 $(eval $(call KernelPackage,mt7921s))
 $(eval $(call KernelPackage,mt7921e))
-$(eval $(call KernelPackage,mt7922-firmware))
 $(eval $(call KernelPackage,mt76))
 $(eval $(call BuildPackage,mt76-test))
