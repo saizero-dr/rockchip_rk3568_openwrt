@@ -1,11 +1,30 @@
 #!/bin/sh
 
+mkdir -p /tmp/oem
+mount -t vfat -o ro /dev/mmcblk0boot1 /tmp/oem 2>/dev/null || true
+if [ -f "/tmp/oem/oem.txt" ]; then
+    source "/tmp/oem/oem.txt"
+    mkdir -p /usr/share/pcat-manager-web/oem
+    mkdir -p /usr/share/pcat-manager-web/static
+    cp /tmp/oem/oem.txt /usr/share/pcat-manager-web/
+    cp /tmp/oem/oem-logo.* /usr/share/pcat-manager-web/static/ || true
+    cp /tmp/oem/oem-trademark.* /usr/share/pcat-manager-web/static/ || true
+    cp /tmp/oem/oem-logo-text.* /usr/share/pcat-manager-web/static/ || true
+    cp /tmp/oem/oem-favicon-*.png /usr/share/pcat-manager-web/static/ || true
+    cp /tmp/oem/oem-apple-*.png /usr/share/pcat-manager-web/static/ || true
+fi
+umount /tmp/oem 2>/dev/null || true
+
 uci set luci.main.lang=zh_cn
 uci commit luci
 
 uci set system.@system[0].timezone=CST-8
 uci set system.@system[0].zonename=Asia/Shanghai
-uci set system.@system[0].hostname=photonicat-openwrt
+if [ x"${OEM_PASSWORD}" != x"" ]; then
+    uci set system.@system[0].hostname=openwrt
+else
+    uci set system.@system[0].hostname=photonicat-openwrt
+fi
 uci commit system
 
 uci set fstab.@global[0].anon_mount=1
@@ -29,24 +48,15 @@ sed -i 's/\"services\"/\"nas\"/g' /usr/lib/lua/luci/controller/usb_printer.lua
 sed -i 's/\"services\"/\"nas\"/g' /usr/lib/lua/luci/controller/xunlei.lua
 sed -i 's/services/nas/g'  /usr/lib/lua/luci/view/minidlna_status.htm
 
-#ln -sf /sbin/ip /usr/bin/ip
-
-#sed -i 's#downloads.openwrt.org#mirrors.cloud.tencent.com/lede#g' /etc/opkg/distfeeds.conf
-sed -i 's|root::0:0:99999:7:::|root:$6$/I2IbM0Dw90rabKx$tydrFTaYXe6m/zALJSR8fDwho8p2oEHU.vhP3l5YszsyAf7Uq/niez5m8rmetXBxQs2K8Ol4Su8.kKdBNBc1W1:19394:0:99999:7:::|g' /etc/shadow
-sed -i 's|root:::0:99999:7:::|root:$6$/I2IbM0Dw90rabKx$tydrFTaYXe6m/zALJSR8fDwho8p2oEHU.vhP3l5YszsyAf7Uq/niez5m8rmetXBxQs2K8Ol4Su8.kKdBNBc1W1:19394:0:99999:7:::|g' /etc/shadow
-
-#sed -i "s/# //g" /etc/opkg/distfeeds.conf
-#sed -i '/openwrt_luci/ { s/snapshots/releases\/18.06.9/g; }'  /etc/opkg/distfeeds.conf
+if [ x"${OEM_PASSWORD}" != x"" ]; then
+    echo "root:${OEM_PASSWORD}" | chpasswd
+else
+    echo "root:photonicat" | chpasswd
+fi
 
 sed -i '/check_signature/d' /etc/opkg.conf
 
 sed -i '/REDIRECT --to-ports 53/d' /etc/firewall.user
-#echo 'iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53' >> /etc/firewall.user
-#echo 'iptables -t nat -A PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53' >> /etc/firewall.user
-#echo '[ -n "$(command -v ip6tables)" ] && ip6tables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53' >> /etc/firewall.user
-#echo '[ -n "$(command -v ip6tables)" ] && ip6tables -t nat -A PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53' >> /etc/firewall.user
-
-#echo 'iptables -A OUTPUT -m string --string "api.installer.xiaomi.cn" --algo bm --to 65535 -j DROP' >> /etc/firewall.user
 
 sed -i '/option disabled/d' /etc/config/wireless
 sed -i '/set wireless.radio${devidx}.disabled/d' /lib/wifi/mac80211.sh
@@ -54,7 +64,17 @@ sed -i '/set wireless.radio${devidx}.disabled/d' /lib/wifi/mac80211.sh
 sed -i '/DISTRIB_REVISION/d' /etc/openwrt_release
 echo "DISTRIB_REVISION='R23.10.1'" >> /etc/openwrt_release
 sed -i '/DISTRIB_DESCRIPTION/d' /etc/openwrt_release
-echo "DISTRIB_DESCRIPTION='photonicatWrt '" >> /etc/openwrt_release
+
+if [ x"${OEM_PASSWORD}" != x"" ]; then
+    sed -i '/DISTRIB_ID/d' /etc/openwrt_release
+    echo "DISTRIB_ID='OpenWrt'" >> /etc/openwrt_release
+    echo "DISTRIB_DESCRIPTION='OpenWrt '" >> /etc/openwrt_release
+    sed -i 's/photonicatWrt/OpenWrt/g' /etc/banner
+    sed -i 's/photonicatWrt/OpenWrt/g' /etc/os-release
+    sed -i 's/photonicatwrt/openwrt/g' /etc/os-release
+else
+    echo "DISTRIB_DESCRIPTION='photonicatWrt '" >> /etc/openwrt_release
+fi
 
 sed -i '/log-facility/d' /etc/dnsmasq.conf
 echo "log-facility=/dev/null" >> /etc/dnsmasq.conf
