@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpcd
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/rpcd.git
@@ -68,9 +68,8 @@ endef
 
 
 # 1: plugin name
-# 2: additional dependencies
+# 2: extra dependencies
 # 3: plugin title/description
-# 4: extra dependencies
 define BuildPlugin
 
   PKG_CONFIG_DEPENDS += CONFIG_PACKAGE_rpcd-mod-$(1)
@@ -79,7 +78,6 @@ define BuildPlugin
     $(Package/rpcd/default)
     TITLE+= ($(1) plugin)
     DEPENDS+=rpcd $(2)
-    EXTRA_DEPENDS:=$(4)
   endef
 
   define Package/rpcd-mod-$(1)/description
@@ -103,5 +101,5 @@ endef
 $(eval $(call BuildPackage,rpcd))
 $(eval $(call BuildPlugin,file,,Provides ubus calls for file and directory operations.))
 $(eval $(call BuildPlugin,rpcsys,,Provides ubus calls for sysupgrade and password changing.))
-$(eval $(call BuildPlugin,iwinfo,+libiwinfo,Provides ubus calls for accessing iwinfo data.,libiwinfo (>= 2023-01-21)))
+$(eval $(call BuildPlugin,iwinfo,+libiwinfo,Provides ubus calls for accessing iwinfo data.))
 $(eval $(call BuildPlugin,ucode,+libucode,Allows implementing plugins using ucode scripts.))
