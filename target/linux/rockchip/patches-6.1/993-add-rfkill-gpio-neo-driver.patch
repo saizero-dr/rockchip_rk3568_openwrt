@@ -30,7 +30,7 @@ new file mode 100644
 index 000000000..745e417e6
 --- /dev/null
 +++ b/net/rfkill/rfkill-gpio-neo.c
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,259 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * Copyright (c) 2022, Kyosuke Nekoyashiki <supercatexpert@gmail.com>
@@ -75,6 +75,18 @@ index 000000000..745e417e6
 +	rfkill->block_state = blocked ? 1 : 0;
 +
 +	if (!rfkill->reset_working) {
++		if (rfkill->reset_gpio) {
++			gpiod_set_value(rfkill->reset_gpio, 1);
++			msleep(rfkill->reset_active_time);
++			if (!blocked) {
++				gpiod_set_value(rfkill->reset_gpio, 0);
++				if (rfkill->reset_wait_time > 10) {
++					msleep(rfkill->reset_wait_time);
++				} else {
++					msleep(10);
++				}
++			}
++		}
 +		gpiod_set_value_cansleep(rfkill->block_gpio, blocked);
 +	}
 +
@@ -237,6 +249,22 @@ index 000000000..745e417e6
 +	return 0;
 +}
 +
++static void rfkill_gpio_neo_shutdown(struct platform_device *pdev)
++{
++	struct rfkill_gpio_neo_data *rfkill = platform_get_drvdata(pdev);
++
++	if (rfkill->reset_gpio) {
++		gpiod_set_value(rfkill->reset_gpio, 1);
++		msleep(100);
++	}
++
++	gpiod_set_value(rfkill->block_gpio, 1);
++
++	if(rfkill->power_gpio) {
++		gpiod_set_value(rfkill->power_gpio, 0);
++	}
++}
++
 +#ifdef CONFIG_OF
 +static struct of_device_id rfkill_gpio_neo_of_match[] = {
 +	{ .compatible = "rfkill-gpio-neo" },
@@ -248,6 +276,7 @@ index 000000000..745e417e6
 +static struct platform_driver rfkill_gpio_neo_driver = {
 +	.probe = rfkill_gpio_neo_probe,
 +	.remove = rfkill_gpio_neo_remove,
++	.shutdown = rfkill_gpio_neo_shutdown,
 +	.driver = {
 +		.name = "rfkill-gpio-neo",
 +		.owner = THIS_MODULE,
