@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=1
+SERIAL_PORT="/dev/ttyUSB3"
+
+start() {
+    echo "Starting shutdown handler..."
+}
+
+stop() {
+    BUGGY_MODEM="$(lsusb -d 2c7c:0125)"
+
+    if [ x"${BUGGY_MODEM}" != x"" ]; then
+        if [ -c "${SERIAL_PORT}" ]; then
+            echo "Sending shutdown AT command to module..."
+            echo -en "AT+QPOWD\r\n" >"${SERIAL_PORT}"
+            sleep 3
+        fi
+    fi
+}

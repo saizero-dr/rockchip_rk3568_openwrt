@@ -30,7 +30,7 @@ new file mode 100644
 index 000000000..745e417e6
 --- /dev/null
 +++ b/net/rfkill/rfkill-gpio-neo.c
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,261 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * Copyright (c) 2022, Kyosuke Nekoyashiki <supercatexpert@gmail.com>
@@ -64,6 +64,7 @@ index 000000000..745e417e6
 +	bool			reset_working;
 +
 +	u32			block_state;
++	bool			reset_before_block;
 +
 +	struct rfkill		*rfkill_dev;
 +};
@@ -75,7 +76,7 @@ index 000000000..745e417e6
 +	rfkill->block_state = blocked ? 1 : 0;
 +
 +	if (!rfkill->reset_working) {
-+		if (rfkill->reset_gpio) {
++		if (rfkill->reset_before_block && rfkill->reset_gpio) {
 +			gpiod_set_value(rfkill->reset_gpio, 1);
 +			msleep(rfkill->reset_active_time);
 +			if (!blocked) {
@@ -142,6 +143,7 @@ index 000000000..745e417e6
 +	device_property_read_u32(&pdev->dev, "power-on-wait-time", &rfkill->power_on_wait_time);
 +	device_property_read_u32(&pdev->dev, "reset-active-time", &rfkill->reset_active_time);
 +	device_property_read_u32(&pdev->dev, "reset-wait-time", &rfkill->reset_wait_time);
++	rfkill->reset_before_block = device_property_read_bool(&pdev->dev, "reset-before-block");
 +
 +	if (!rfkill->name)
 +		rfkill->name = dev_name(&pdev->dev);
@@ -232,7 +234,7 @@ index 000000000..745e417e6
 +{
 +	struct rfkill_gpio_neo_data *rfkill = platform_get_drvdata(pdev);
 +
-+	if (rfkill->reset_gpio) {
++	if (rfkill->reset_gpio && rfkill->reset_before_block) {
 +		gpiod_set_value(rfkill->reset_gpio, 1);
 +		msleep(100);
 +	}
@@ -253,7 +255,7 @@ index 000000000..745e417e6
 +{
 +	struct rfkill_gpio_neo_data *rfkill = platform_get_drvdata(pdev);
 +
-+	if (rfkill->reset_gpio) {
++	if (rfkill->reset_gpio && rfkill->reset_before_block) {
 +		gpiod_set_value(rfkill->reset_gpio, 1);
 +		msleep(100);
 +	}
