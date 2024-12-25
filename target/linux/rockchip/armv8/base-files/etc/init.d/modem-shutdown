@@ -19,3 +19,7 @@ stop() {
         fi
     fi
 }
+
+shutdown() {
+    stop
+}

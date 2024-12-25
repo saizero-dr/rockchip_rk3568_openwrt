@@ -230,7 +230,7 @@
 		reset-wait-time = <0>;
 		reset-active-time = <800>;
 
-		reset-before-block;
+		/* reset-before-block; */
 	};
 
 	firmware {
