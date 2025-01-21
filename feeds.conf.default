@@ -2,9 +2,3 @@ src-git packages https://github.com/photonicat/rockchip_rk3568_openwrt_packages.
 src-git luci https://github.com/photonicat/rockchip_rk3568_openwrt_luci.git;master
 src-git routing https://github.com/photonicat/rockchip_rk3568_openwrt_routing.git;master
 src-git telephony https://github.com/photonicat/rockchip_rk3568_openwrt_telephony.git;master
-
-src-git packages https://github.com/immortalwrt/packages.git
-src-git luci https://github.com/immortalwrt/luci.git
-src-git routing https://github.com/openwrt/routing.git
-src-git telephony https://github.com/openwrt/telephony.git
-src-git video https://github.com/openwrt/video.git
